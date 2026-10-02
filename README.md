@@ -46,3 +46,7 @@ Production build: `npm run build` → static files in `dist/` (open with `npm ru
 | `src/ui/` | menus, HUD, shop, results |
 
 Dev tip: `http://localhost:5173/?speed=4` fast-forwards the simulation (dev builds only), and `window.__game` is exposed in DevTools.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
