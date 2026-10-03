@@ -169,6 +169,7 @@ export class Hazards {
     this.scene.remove(g);
     g.traverse((m) => {
       if (m.isMesh && m.geometry !== this.bladeGeo && m.geometry !== this.rimGeo && m.geometry !== this.hubGeo) m.geometry.dispose();
+      if (m.isMesh && m.material.map) m.material.dispose();
     });
     tex?.dispose();
   }

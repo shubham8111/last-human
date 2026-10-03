@@ -177,7 +177,7 @@ export class Game {
     const r = this.run;
     const t = this.track;
     this.state = 'result';
-    this.save.coins += r.coins;
+    this.save.coins += Math.floor(r.coins);
     if (r.result === 'win' && !t.endless) {
       this.save.unlocked = Math.max(this.save.unlocked, Math.min(LEVELS.length, t.number + 1));
       if (t.number === LEVELS.length) this.save.beatGame = true;
@@ -363,10 +363,9 @@ export class Game {
       return ['CURSED ÷2', false];
     }
     // Ambush: runners burst out of the alleys ahead.
-    const hp = this.track.endless ? this.track.cfg.hp : this.track.hp;
     const count = Math.min(90, Math.round(n * 0.5 + 8));
     for (let i = 0; i < count; i++) {
-      const e = this.enemies.spawn('runner', (Math.random() - 0.5) * 12, sq.z - 22 - Math.random() * 8, hp * 1.5, { aggro: 999 });
+      const e = this.enemies.spawn('runner', (Math.random() - 0.5) * 12, sq.z - 22 - Math.random() * 8, this.track.hp * 1.5, { aggro: 999 });
       if (e) e.state = 'chase';
     }
     return ['AMBUSH!', false];
@@ -391,7 +390,7 @@ export class Game {
     this.audio.explosion();
     this.stage.addShake(0.55);
     const R = 4.6;
-    const dmg = 30 * (this.track.hp || 1) * (this.track.endless ? this.track.cfg.hp : 1);
+    const dmg = 30 * this.track.hp;
     for (const o of this.enemies.list) {
       if (o === e || o.state === 'dying') continue;
       const d2 = (o.x - e.x) ** 2 + (o.z - e.z) ** 2;
@@ -468,9 +467,8 @@ export class Game {
         this.stage.addShake(0.25);
       },
       summon: (x, z, n) => {
-        const hp = this.track.endless ? this.track.cfg.hp : this.track.hp;
         for (let i = 0; i < n; i++) {
-          const e = this.enemies.spawn(Math.random() < 0.3 ? 'runner' : 'walker', x + (Math.random() - 0.5) * 8, z - Math.random() * 3, hp, { aggro: 999 });
+          const e = this.enemies.spawn(Math.random() < 0.3 ? 'runner' : 'walker', x + (Math.random() - 0.5) * 8, z - Math.random() * 3, this.track.hp, { aggro: 999 });
           if (e) e.state = 'chase';
         }
         this.effects.ring(x, z, 6, [1.5, 0.3, 2.5], 0.6);
@@ -482,7 +480,7 @@ export class Game {
 
   rebuildBuckets() {
     const b = this.buckets;
-    for (const arr of b.values()) arr.length = 0;
+    b.clear();
     for (const e of this.enemies.list) {
       if (e.state === 'dying') continue;
       const k = Math.floor(e.z / CELL);

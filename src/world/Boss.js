@@ -97,7 +97,7 @@ export class Boss {
   update(dt, time, squad, hooks) {
     if (!this.active) return;
     this.mat.userData.uniforms.uTime.value = time;
-    const s = this.scale;
+    this.flash = Math.max(0, this.flash - dt);
     let tilt = 0;
     let armRaise = 0;
 
@@ -220,12 +220,7 @@ export class Boss {
     _m.compose(_p, _q, _s);
     this.mesh.setMatrixAt(0, _m);
     this.mesh.instanceMatrix.needsUpdate = true;
-    if (this.flash > 0) {
-      this.flash -= 1 / 60;
-      this.mesh.setColorAt(0, _p.set(2.5, 2.5, 2.5));
-    } else {
-      this.mesh.setColorAt(0, _p.set(1, 1, 1));
-    }
+    this.mesh.setColorAt(0, _p.setScalar(this.flash > 0 ? 2.5 : 1));
     this.mesh.instanceColor.needsUpdate = true;
   }
 }

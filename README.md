@@ -47,6 +47,17 @@ Production build: `npm run build` → static files in `dist/` (open with `npm ru
 
 Dev tip: `http://localhost:5173/?speed=4` fast-forwards the simulation (dev builds only), and `window.__game` is exposed in DevTools.
 
+## Development
+
+- **Requirements:** Node 18+ and a WebGL-capable browser. Fonts load from Google Fonts, so you need a network connection on first load.
+- **Scripts:** `npm run dev` (hot-reload dev server), `npm run build` (static output to `dist/`), `npm run preview` (serve the build).
+- **Tests:** none yet. `npm run build` catches import and syntax errors; playtest in the dev server.
+- **Debugging:** `?speed=N` fast-forwards the simulation, and `window.__game` exposes the game state (for example `__game.squad.setCount(500)` or `__game.finish(true)`).
+- **Levels are generated, not hand-placed.** A seeded builder in `src/data/levels.js` simulates a balanced player and scales enemies, walls and bosses to match. Same level number gives the same level every time.
+- **Saves** live in `localStorage` under `lasthuman.save.v1`. Clear that key to reset progress.
+
+Working with a coding agent? See [CLAUDE.md](CLAUDE.md) for architecture notes, conventions and gotchas.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

@@ -46,11 +46,15 @@ document.fonts?.ready.finally(() => {
   const speed = import.meta.env.DEV ? Number(new URLSearchParams(location.search).get('speed')) || 1 : 1;
   let last = performance.now();
   const frame = (now) => {
+    requestAnimationFrame(frame);
+    // 120/144 Hz displays would otherwise double the GPU work; menus only need 30.
+    const idle = game.state === 'menu' || game.state === 'result';
     const dt = (now - last) / 1000;
+    if (dt < (idle ? 1 / 30 : 1 / 60) * 0.8) return;
     last = now;
     for (let i = 0; i < speed; i++) game.update(dt);
+    if (game.paused && !stage.needsRender) return; // nothing changed since the last frame
     stage.render(dt);
-    requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
 });

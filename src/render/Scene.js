@@ -5,11 +5,12 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 const FOG_COLOR = new THREE.Color(0x5a3f52);
+const MAX_DPR = 1.5; // retina at 2x is ~1.8x the pixels for little visible gain
 
 export class Stage {
   constructor(canvas) {
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: false }); // the composer renders offscreen, so MSAA on the canvas would be wasted
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_DPR));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -23,9 +24,12 @@ export class Stage {
 
     this.camera = new THREE.PerspectiveCamera(52, 1, 0.5, 500);
     this.camTarget = new THREE.Vector3();
+    this.desired = new THREE.Vector3();
+    this.look = new THREE.Vector3();
     this.camPos = new THREE.Vector3(0, 12, 14);
     this.shake = 0;
     this.time = 0;
+    this.needsRender = true; // lets the loop skip drawing an unchanged (paused) frame
 
     this.buildSky();
     this.buildLights();
@@ -95,7 +99,7 @@ export class Stage {
 
     const sun = new THREE.DirectionalLight(0xffb57a, 3.0);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.mapSize.set(1024, 1024);
     const sc = sun.shadow.camera;
     sc.left = -22;
     sc.right = 22;
@@ -121,7 +125,8 @@ export class Stage {
     const h = window.innerHeight;
     this.renderer.setSize(w, h, false);
     this.composer.setSize(w, h);
-    this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.composer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_DPR));
+    this.needsRender = true;
     this.camera.aspect = w / h;
     // Portrait screens need a taller, wider view so the road fits.
     this.portrait = w / h < 1;
@@ -137,17 +142,17 @@ export class Stage {
   follow(x, z, dt, mode = 'run') {
     const back = this.portrait ? 17 : 14;
     const up = this.portrait ? 16 : 11.5;
-    let desired, look;
+    const { desired, look } = this;
     if (mode === 'menu') {
       const a = this.time * 0.12;
-      desired = new THREE.Vector3(x + Math.sin(a) * 13, 5.5, z + Math.cos(a) * 13);
-      look = new THREE.Vector3(x, -0.15, z);
+      desired.set(x + Math.sin(a) * 13, 5.5, z + Math.cos(a) * 13);
+      look.set(x, -0.15, z);
     } else if (mode === 'boss') {
-      desired = new THREE.Vector3(x * 0.4, up + 2.5, z + back + 3);
-      look = new THREE.Vector3(x * 0.25, 1, z - 14);
+      desired.set(x * 0.4, up + 2.5, z + back + 3);
+      look.set(x * 0.25, 1, z - 14);
     } else {
-      desired = new THREE.Vector3(x * 0.55, up, z + back);
-      look = new THREE.Vector3(x * 0.35, 0.5, z - 12);
+      desired.set(x * 0.55, up, z + back);
+      look.set(x * 0.35, 0.5, z - 12);
     }
     const k = 1 - Math.exp(-dt * 5);
     this.camPos.lerp(desired, k);
@@ -177,5 +182,6 @@ export class Stage {
     this.time += dt;
     this.sky.material.uniforms.uTime.value = this.time;
     this.composer.render(dt);
+    this.needsRender = false;
   }
 }

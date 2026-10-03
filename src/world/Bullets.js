@@ -17,6 +17,7 @@ export class Bullets {
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.mesh.setColorAt(0, _c.setRGB(1, 1, 1));
     this.mesh.frustumCulled = false;
+    this.mesh.count = 0; // grows with the highest live slot
     scene.add(this.mesh);
     this.x = new Float32Array(MAX);
     this.y = new Float32Array(MAX);
@@ -60,6 +61,7 @@ export class Bullets {
     this.lastHit[i] = -1;
     this.mesh.setColorAt(i, _c.setRGB(tint[0], tint[1], tint[2]));
     this.alive.push(i);
+    if (i >= this.mesh.count) this.mesh.count = i + 1;
   }
 
   kill(k) {
@@ -73,6 +75,7 @@ export class Bullets {
 
   clear() {
     while (this.alive.length) this.kill(this.alive.length - 1);
+    this.mesh.count = 0;
     this.mesh.instanceMatrix.needsUpdate = true;
   }
 
@@ -101,6 +104,9 @@ export class Bullets {
       _m.compose(_p, _q, _s);
       this.mesh.setMatrixAt(i, _m);
     }
+    let hi = 0;
+    for (const i of this.alive) if (i >= hi) hi = i + 1;
+    this.mesh.count = hi;
     this.mesh.instanceMatrix.needsUpdate = true;
     this.mesh.instanceColor.needsUpdate = true;
   }

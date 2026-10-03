@@ -31,9 +31,13 @@ export class Effects {
       life: new Float32Array(N), max: new Float32Array(N), size: new Float32Array(N),
       grav: new Float32Array(N), drag: new Float32Array(N), spin: new Float32Array(N),
       grow: new Float32Array(N),
+      cr: new Float32Array(N), cg: new Float32Array(N), cb: new Float32Array(N),
     };
-    this.cursor = 0;
-    for (let i = 0; i < N; i++) this.hide(i);
+    this.alive = []; // slots with life > 0
+    this.free = [];
+    this.steal = 0;
+    for (let i = N - 1; i >= 0; i--) this.free.push(i);
+    this.mesh.count = 0;
 
     // Shockwave rings
     this.rings = [];
@@ -70,22 +74,19 @@ export class Effects {
     this.texts = [];
   }
 
-  hide(i) {
-    this.p.life[i] = 0;
-    _m.makeScale(0, 0, 0);
-    this.mesh.setMatrixAt(i, _m);
-  }
-
   spawn(x, y, z, vx, vy, vz, life, size, color, grav = -18, drag = 1.5, grow = 0) {
-    const i = this.cursor;
-    this.cursor = (this.cursor + 1) % MAX_PARTICLES;
     const p = this.p;
+    let i = this.free.pop();
+    if (i === undefined) i = this.alive[this.steal++ % this.alive.length]; // pool full: recycle a live particle
+    else this.alive.push(i);
     p.x[i] = x; p.y[i] = y; p.z[i] = z;
     p.vx[i] = vx; p.vy[i] = vy; p.vz[i] = vz;
     p.life[i] = life; p.max[i] = life; p.size[i] = size;
     p.grav[i] = grav; p.drag[i] = drag; p.grow[i] = grow;
     p.spin[i] = Math.random() * 10;
-    this.mesh.setColorAt(i, color);
+    p.cr[i] = color.r;
+    p.cg[i] = color.g;
+    p.cb[i] = color.b;
   }
 
   // A burst of chunky gore when a zombie dies.
@@ -191,11 +192,15 @@ export class Effects {
 
   update(dt, camera) {
     const p = this.p;
-    for (let i = 0; i < MAX_PARTICLES; i++) {
-      if (p.life[i] <= 0) continue;
+    const alive = this.alive;
+    // Instance k is the k-th live particle, so only live ones are drawn; swap-remove keeps `alive` dense.
+    for (let k = 0; k < alive.length; ) {
+      const i = alive[k];
       p.life[i] -= dt;
       if (p.life[i] <= 0) {
-        this.hide(i);
+        this.free.push(i);
+        alive[k] = alive[alive.length - 1];
+        alive.pop();
         continue;
       }
       const d = Math.exp(-p.drag[i] * dt);
@@ -219,8 +224,11 @@ export class Effects {
       _s.set(s, s, s);
       _p.set(p.x[i], p.y[i], p.z[i]);
       _m.compose(_p, _q, _s);
-      this.mesh.setMatrixAt(i, _m);
+      this.mesh.setMatrixAt(k, _m);
+      this.mesh.instanceColor.setXYZ(k, p.cr[i], p.cg[i], p.cb[i]);
+      k++;
     }
+    this.mesh.count = alive.length;
     this.mesh.instanceMatrix.needsUpdate = true;
     this.mesh.instanceColor.needsUpdate = true;
 
