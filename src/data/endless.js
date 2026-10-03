@@ -24,7 +24,7 @@ export class EndlessTrack {
   ramp() {
     const s = this.segs;
     const c = this.cfg;
-    c.hp = 1 + s * 0.08;
+    this.hp = c.hp = 1 + s * 0.08;
     c.pressure = Math.min(1.7, 0.95 + s * 0.018);
     c.tierBase = 1;
     c.tierEvery = 5;

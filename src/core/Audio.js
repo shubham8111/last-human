@@ -215,35 +215,28 @@ export class Audio {
     this.tone({ freq: 140, to: 40, dur: 0.25, type: 'sine', vol: 0.6, delay, out: this.music });
   }
 
-  snare(delay) {
+  // Short high-passed noise tick shared by snare and hat.
+  hiss(delay, freq, vol, dur) {
     const c = this.ctx;
     const src = c.createBufferSource();
     src.buffer = this.noise;
     const f = c.createBiquadFilter();
     f.type = 'highpass';
-    f.frequency.value = 1500;
+    f.frequency.value = freq;
     const g = c.createGain();
     const t = c.currentTime + delay;
-    g.gain.setValueAtTime(0.35, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
     src.connect(f).connect(g).connect(this.music);
     src.start(t);
-    src.stop(t + 0.2);
+    src.stop(t + dur + 0.05);
+  }
+
+  snare(delay) {
+    this.hiss(delay, 1500, 0.35, 0.15);
   }
 
   hat(delay) {
-    const c = this.ctx;
-    const src = c.createBufferSource();
-    src.buffer = this.noise;
-    const f = c.createBiquadFilter();
-    f.type = 'highpass';
-    f.frequency.value = 7000;
-    const g = c.createGain();
-    const t = c.currentTime + delay;
-    g.gain.setValueAtTime(0.12, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
-    src.connect(f).connect(g).connect(this.music);
-    src.start(t);
-    src.stop(t + 0.06);
+    this.hiss(delay, 7000, 0.12, 0.04);
   }
 }

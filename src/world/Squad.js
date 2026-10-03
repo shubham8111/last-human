@@ -216,8 +216,10 @@ export class Squad {
     const n = this.soldiers.length;
     const sc = this.scale;
     _s.set(sc, sc, sc);
-    for (let i = 0; i < DISPLAY_MAX; i++) {
-      if (i >= n || i === 0 || !this.visible) {
+    const shown = this.visible ? n : 0;
+    this.mesh.count = shown;
+    for (let i = 0; i < shown; i++) {
+      if (i === 0) {
         _m.makeScale(0, 0, 0);
         this.mesh.setMatrixAt(i, _m);
         continue;
@@ -249,7 +251,7 @@ export class Squad {
     const sx = (_p.x * 0.5 + 0.5) * window.innerWidth;
     const sy = (-_p.y * 0.5 + 0.5) * window.innerHeight;
     this.label.style.transform = `translate(-50%,-100%) translate(${sx}px,${sy}px)`;
-    this.label.textContent = this.count;
+    if (this.shownCount !== this.count) this.label.textContent = this.shownCount = this.count;
     this.label.style.display = this.visible && this.count > 0 ? '' : 'none';
   }
 }

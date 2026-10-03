@@ -18,7 +18,6 @@ export class UI {
     this.save = save;
     this.audio = audio;
     this.actions = actions; // { play(n), endless(), menu(), restart(), resume(), heroChanged() }
-    this.screen = null;
     this.hud = null;
     this.lastHud = {};
 

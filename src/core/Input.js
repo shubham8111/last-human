@@ -26,7 +26,7 @@ export class Input {
 
     window.addEventListener('keydown', (e) => {
       this.keys.add(e.code);
-      if ((e.code === 'Escape' || e.code === 'KeyP') && this.onPause) this.onPause();
+      if ((e.code === 'Escape' || e.code === 'KeyP') && !e.repeat && this.onPause) this.onPause();
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
     window.addEventListener('blur', () => {

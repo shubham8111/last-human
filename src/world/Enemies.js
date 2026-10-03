@@ -55,7 +55,7 @@ export class Enemies {
         mesh.setMatrixAt(i, _m);
       }
       scene.add(mesh);
-      this.pools[type] = { mesh, free, cfg };
+      this.pools[type] = { mesh, free, cfg, hi: 0 };
     }
 
     this.labels = [];
@@ -127,16 +127,11 @@ export class Enemies {
     return false;
   }
 
-  aliveCount() {
-    let n = 0;
-    for (const e of this.list) if (e.state !== 'dying' && e.type !== 'barrel') n++;
-    return n;
-  }
-
   // Moves enemies, animates them. Calls onContact(e) when one reaches the squad.
-  update(dt, time, squad, camera, onContact, stopZ = null) {
+  update(dt, time, squad, camera, onContact) {
     this.walkMat.userData.uniforms.uTime.value = time;
     const sr = squad.radius;
+    for (const p of Object.values(this.pools)) p.hi = 0; // highest used slot + 1, so unused instances aren't drawn
     for (let k = this.list.length - 1; k >= 0; k--) {
       const e = this.list[k];
       const pool = this.pools[e.type];
@@ -196,6 +191,7 @@ export class Enemies {
       _p.set(e.x, -sink, e.z);
       _m.compose(_p, _q, _s);
       pool.mesh.setMatrixAt(e.slot, _m);
+      if (e.slot >= pool.hi) pool.hi = e.slot + 1;
       if (e.flash > 0) {
         e.flash -= dt;
         const f = e.flash > 0 ? 3.2 : 1;
@@ -204,7 +200,10 @@ export class Enemies {
         pool.mesh.instanceColor.needsUpdate = true;
       }
     }
-    for (const p of Object.values(this.pools)) p.mesh.instanceMatrix.needsUpdate = true;
+    for (const p of Object.values(this.pools)) {
+      p.mesh.count = p.hi;
+      p.mesh.instanceMatrix.needsUpdate = true;
+    }
     this.updateLabels(squad, camera);
   }
 
@@ -221,9 +220,11 @@ export class Enemies {
       _p.set(e.x, e.cfg.scale * 2.1 + 0.2, e.z).project(camera);
       if (_p.z > 1) continue;
       const el = this.labels[used++];
-      el.style.display = '';
-      el.textContent = Math.ceil(e.hp);
-      el.className = 'hp-label' + (e.type === 'brute' ? ' big' : '') + (e.type === 'runner' ? ' fast' : '');
+      const hp = Math.ceil(e.hp);
+      const cls = 'hp-label' + (e.type === 'brute' ? ' big' : '') + (e.type === 'runner' ? ' fast' : '');
+      if (el.style.display) el.style.display = '';
+      if (el._hp !== hp) el.textContent = el._hp = hp;
+      if (el._cls !== cls) el.className = el._cls = cls;
       el.style.transform = `translate(-50%,-50%) translate(${(_p.x * 0.5 + 0.5) * w}px,${(-_p.y * 0.5 + 0.5) * h}px)`;
     }
     for (let i = used; i < LABELS; i++) if (this.labels[i].style.display !== 'none') this.labels[i].style.display = 'none';
